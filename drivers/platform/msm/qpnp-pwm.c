@@ -1037,12 +1037,113 @@ static int qpnp_lpg_configure_lut_state(struct pwm_device *pwm,
 	return rc;
 }
 
+static int qpnp_lpg_configure_lut_states(struct pwm_device **pwms,
+				int num, enum qpnp_lut_state state)
+{
+	struct pwm_device	*pwm;
+	struct qpnp_lpg_config	*lpg_config;
+	struct qpnp_lpg_chip	*chip;
+	u8			value1, value2, mask1, mask2;
+	u8			*reg1, *reg2;
+	u16			addr, addr1;
+	int			rc, i;
+	u8 ramp_en = 0, ramp_mask = 0;
+
+	for (i = 0; i < num; i++) {
+		pwm = pwms[i];
+		chip = pwm->chip;
+		lpg_config = &pwm->chip->lpg_config;
+
+		value1 = pwm->chip->qpnp_lpg_registers[QPNP_RAMP_CONTROL];
+		reg1 = &pwm->chip->qpnp_lpg_registers[QPNP_RAMP_CONTROL];
+		reg2 = &pwm->chip->qpnp_lpg_registers[QPNP_ENABLE_CONTROL];
+		mask2 = QPNP_EN_PWM_HIGH_MASK | QPNP_EN_PWM_LO_MASK |
+			QPNP_EN_PWM_OUTPUT_MASK | QPNP_PWM_SRC_SELECT_MASK |
+						QPNP_PWM_EN_RAMP_GEN_MASK;
+
+		switch (chip->revision) {
+		case QPNP_LPG_REVISION_0:
+			if (state == QPNP_LUT_ENABLE) {
+				QPNP_ENABLE_LUT_V0(value1);
+				value2 = QPNP_ENABLE_LPG_MODE;
+			} else {
+				QPNP_DISABLE_LUT_V0(value1);
+				value2 = QPNP_DISABLE_LPG_MODE;
+			}
+			mask1 = QPNP_RAMP_START_MASK;
+			addr1 = SPMI_LPG_REG_ADDR(lpg_config->base_addr,
+						QPNP_RAMP_CONTROL);
+			break;
+		case QPNP_LPG_REVISION_1:
+			if (state == QPNP_LUT_ENABLE) {
+				QPNP_ENABLE_LUT_V1(value1, pwm->pwm_config.channel_id);
+				value2 = QPNP_ENABLE_LPG_MODE;
+			} else {
+				value2 = QPNP_DISABLE_LPG_MODE;
+			}
+			mask1 = value1;
+			addr1 = lpg_config->lut_base_addr +
+				SPMI_LPG_REV1_RAMP_CONTROL_OFFSET;
+			break;
+		default:
+			pr_err("Invalid LPG revision\n");
+			return -EINVAL;
+		}
+
+		addr = SPMI_LPG_REG_ADDR(lpg_config->base_addr,
+					QPNP_ENABLE_CONTROL);
+
+		rc = qpnp_lpg_save_and_write(value2, mask2, reg2,
+						addr, 1, chip);
+		if (rc)
+			return rc;
+
+		ramp_en |= value1;
+		ramp_mask |= mask1;
+	}
+
+	if (state == QPNP_LUT_ENABLE || chip->revision == QPNP_LPG_REVISION_0)
+		rc = qpnp_lpg_save_and_write(ramp_en, ramp_mask, reg1,
+					addr1, 1, chip);
+	return rc;
+}
+
 static inline int qpnp_enable_pwm_mode(struct qpnp_pwm_config *pwm_conf)
 {
 	if (qpnp_check_gpled_lpg_channel(pwm_conf->channel_id))
 		return QPNP_ENABLE_PWM_MODE_GPLED_CHANNEL;
 	return QPNP_ENABLE_PWM_MODE;
 }
+
+int pwm_enable_synchronized(struct pwm_device **pwms, size_t num)
+{
+	unsigned long *flags;
+	int rc = 0, i;
+
+	if (pwms == NULL || IS_ERR(pwms) || num == 0) {
+		pr_err("Invalid pwm handle or idx_len=0\n");
+		return -EINVAL;
+	}
+
+	flags = kzalloc(sizeof(unsigned long) * num, GFP_KERNEL);
+	if (!flags)
+		return -ENOMEM;
+
+	for (i = 0; i < num; i++)
+		spin_lock_irqsave(&pwms[i]->chip->lpg_lock, flags[i]);
+
+	rc = qpnp_lpg_configure_lut_states(pwms, num, QPNP_LUT_ENABLE);
+
+	while (i > 0) {
+		spin_unlock_irqrestore(&pwms[i - 1]->chip->lpg_lock, flags[i - 1]);
+		i--;
+	}
+
+	kfree(flags);
+
+	return rc;
+}
+EXPORT_SYMBOL_GPL(pwm_enable_synchronized);
 
 static int qpnp_lpg_configure_pwm_state(struct pwm_device *pwm,
 					enum qpnp_pwm_state state)
