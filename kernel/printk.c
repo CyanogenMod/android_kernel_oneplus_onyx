@@ -2302,3 +2302,4 @@ void kmsg_dump(enum kmsg_dump_reason reason)
 	rcu_read_unlock();
 }
 #endif
+
