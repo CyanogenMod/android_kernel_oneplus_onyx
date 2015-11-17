@@ -217,7 +217,7 @@ static volatile unsigned int logbuf_cpu = UINT_MAX;
 
 /* record buffer */
 #define __LOG_BUF_LEN (1 << CONFIG_LOG_BUF_SHIFT)
-static char __log_buf[__LOG_BUF_LEN];
+char __log_buf[__LOG_BUF_LEN];
 static char *log_buf = __log_buf;
 static u32 log_buf_len = __LOG_BUF_LEN;
 
