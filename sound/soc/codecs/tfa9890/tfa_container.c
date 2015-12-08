@@ -86,11 +86,10 @@ int tfa_init_profile(struct tfa98xx *tfa98xx, struct nxpTfaProfile *prof, int hi
 	return 0;
 }
 
+//static char *filename = "/etc/firmware/tfa98xx.cnt";
 static char *filename = "tfa98xx.cnt";
-//static char *filename = "/etc/tfa98xx.cnt";
-
-
 module_param(filename, charp, 0);
+
 
 int tfa98xx_cnt_loadfile(struct tfa98xx *tfa98xx, int index)
 {

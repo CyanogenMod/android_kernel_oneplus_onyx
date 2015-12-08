@@ -2665,9 +2665,9 @@ static unsigned char synaptics_rmi4_update_gesture2(unsigned char *gesture,unsig
 if((gesturemode == DouTap && DouTap_gesture)||(gesturemode == RightVee && RightVee_gesture)\
         ||(gesturemode == LeftVee && LeftVee_gesture)||(gesturemode == UpVee && UpVee_gesture)\
         ||(gesturemode == Circle && Circle_gesture)||(gesturemode == DouSwip && DouSwip_gesture)){
-		input_report_key(syna_rmi4_data->input_dev, keycode, 1);
+		input_report_key(syna_rmi4_data->input_dev, keycode+248, 1);
 		input_sync(syna_rmi4_data->input_dev);
-		input_report_key(syna_rmi4_data->input_dev, keycode, 0);
+		input_report_key(syna_rmi4_data->input_dev, keycode+248, 0);
 		input_sync(syna_rmi4_data->input_dev);
     }
 

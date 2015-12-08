@@ -47,6 +47,18 @@ endif
 
 # MSM8974
    zreladdr-$(CONFIG_ARCH_MSM8974)	:= 0x00008000
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_14001_HW.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_15055_HW_11.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_15055_HW_12.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_15055_HW_13.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_15055_HW_14.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ab-pm8941-mtp_15055_HW_15.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_14001_HW.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_15055_HW_11.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_15055_HW_12.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_15055_HW_13.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_15055_HW_14.dtb
+#~         dtb-$(CONFIG_ARCH_MSM8974)	+= msm8974pro-ac-pm8941-mtp_15055_HW_15.dtb
 
 
 # APQ8084
