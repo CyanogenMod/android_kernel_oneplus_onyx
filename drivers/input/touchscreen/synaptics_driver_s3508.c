@@ -3456,7 +3456,9 @@ static int	synaptics_input_init(struct synaptics_ts_data *ts)
 	set_bit(KEY_DOUBLE_TAP, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_CIRCLE, ts->input_dev->keybit);
 	set_bit(KEY_GESTURE_V, ts->input_dev->keybit);
-
+	set_bit(KEY_GESTURE_LEFT_V, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_RIGHT_V, ts->input_dev->keybit);
+	set_bit(KEY_GESTURE_TWO_SWIPE, ts->input_dev->keybit);
 		set_bit(KEY_MENU , ts->input_dev->keybit);
 		set_bit(KEY_HOMEPAGE , ts->input_dev->keybit);
 		set_bit(KEY_BACK , ts->input_dev->keybit);
