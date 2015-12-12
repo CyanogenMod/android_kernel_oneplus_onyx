@@ -217,7 +217,6 @@ static struct of_device_id tristate_dev_of_match[] = {
 	{ },
 };
 MODULE_DEVICE_TABLE(of, tristate_dev_of_match);
-tmp
 #else
 
 static inline int
