@@ -226,6 +226,7 @@ static uint32_t gesture_upload = 0;
 static atomic_t double_enable;
 static int is_gesture_enable = 0;
 static atomic_t key_reverse;
+static atomic_t keypad_enable;
 static struct proc_dir_entry *prEntry_dtap = NULL;
 static struct proc_dir_entry *prEntry_coodinate  = NULL;
 static struct proc_dir_entry *prEntry_double_tap = NULL;
@@ -564,6 +565,7 @@ static int synaptics_tpd_button_init(struct synaptics_ts_data *ts)
 		goto err_input_dev_alloc_failed;
 	}
 	ts->kpd->name = TPD_DEVICE "-kpd";
+	atomic_set(&keypad_enable,1);
     set_bit(EV_KEY, ts->kpd->evbit);
 	__set_bit(KEY_MENU, ts->kpd->keybit);
 	__set_bit(KEY_HOME, ts->kpd->keybit);
@@ -2039,6 +2041,45 @@ static int i2c_device_test_read_func(struct file *file, char __user *user_buf, s
 	ret = sprintf(page, "%d\n", atomic_read(&i2c_device_test));
 	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
 	return ret;
+}
+/**
+ * Enables/Disable capacitive keys via procfs
+ */
+static int cp_keys_status_read_func(struct file *file, char __user *buf,
+		size_t count, loff_t *ppos) {
+	char values[] = { '0' + atomic_read(&keypad_enable), '\n' };
+	printk("KEY_STATUS: the Keys switch is:%d\n", atomic_read(&keypad_enable));
+	return simple_read_from_buffer(buf, count, ppos, values, sizeof(values));
+}
+
+static int cp_keys_status_write_func(struct file *file, const char __user *buf,
+		size_t count, loff_t *ppos) {
+	struct synaptics_ts_data *ts = ts_g;
+	char temp[1] = { 0 };
+	int new_status = -1;
+
+	if (copy_from_user(temp, buf, 1))
+		return -EFAULT;
+
+	sscanf(temp, "%d", &new_status);
+	atomic_set(&keypad_enable, new_status);
+
+	if (new_status == 0) {
+		printk("KEY_STATUS: disable!\n");
+		clear_bit(KEY_MENU, ts->input_dev->keybit);
+		clear_bit(KEY_HOMEPAGE, ts->input_dev->keybit);
+		clear_bit(KEY_BACK, ts->input_dev->keybit);
+	} else if (new_status == 1) {
+		printk("KEY_STATUS: enable!\n");
+		set_bit(KEY_MENU, ts->input_dev->keybit);
+		set_bit(KEY_HOMEPAGE, ts->input_dev->keybit);
+		set_bit(KEY_BACK, ts->input_dev->keybit);
+	} else {
+		printk("Invalid new_status = %d", new_status);
+		return -EINVAL;
+	}
+
+	return count;
 }
 
 #ifdef SUPPORT_GESTURE
@@ -3912,6 +3953,13 @@ static const struct file_operations tp_double_proc_fops = {
 	.owner = THIS_MODULE,
 };
 
+static const struct file_operations keypad_enable_proc_fops = {
+	.write = cp_keys_status_write_func,
+	.read =  cp_keys_status_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
 static const struct file_operations coordinate_proc_fops = {
 	.read =  coordinate_proc_read_func,
 	.open = simple_open,
@@ -4060,6 +4108,13 @@ static int init_synaptics_proc(void)
 	if(prEntry_tmp == NULL){
 		ret = -ENOMEM;
 		printk(KERN_INFO"init_synaptics_proc: Couldn't create proc entry\n");
+	}
+
+	prEntry_tmp = proc_create("keypad_enable", 0666, prEntry_tp, &keypad_enable_proc_fops);
+	if(prEntry_tmp == NULL)
+	{
+		ret = -ENOMEM;
+		printk(KERN_ERR"init_synaptic_proc: Couldn't create keypad_enable proc entry\n");
 	}
 
 #endif
@@ -5259,4 +5314,3 @@ module_exit(tpd_driver_exit);
 
 MODULE_DESCRIPTION("Synaptics S3203 Touchscreen Driver");
 MODULE_LICENSE("GPL");
-
