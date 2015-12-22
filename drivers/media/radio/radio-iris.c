@@ -51,6 +51,7 @@ static char rt_ert_flag;
 static char formatting_dir;
 static unsigned char sig_blend = CTRL_ON;
 static DEFINE_MUTEX(iris_fm);
+static int transport_ready = -1;
 
 module_param(rds_buf, uint, 0);
 MODULE_PARM_DESC(rds_buf, "RDS buffer entries: *100*");
@@ -62,6 +63,7 @@ static void radio_hci_cmd_task(unsigned long arg);
 static void radio_hci_rx_task(unsigned long arg);
 static struct video_device *video_get_dev(void);
 static DEFINE_RWLOCK(hci_task_lock);
+extern int radio_hci_smd_init(void);
 
 struct iris_device {
 	struct device *dev;
@@ -5092,10 +5094,18 @@ static const struct v4l2_ioctl_ops iris_ioctl_ops = {
 	.vidioc_g_ext_ctrls           = iris_vidioc_g_ext_ctrls,
 };
 
+static int iris_fops_open(struct file *f) {
+	if (transport_ready < 0) {
+		transport_ready = radio_hci_smd_init();
+	}
+	return transport_ready;
+}
+
 static const struct v4l2_file_operations iris_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = video_ioctl2,
 	.release        = iris_fops_release,
+	.open           = iris_fops_open,
 };
 
 static struct video_device iris_viddev_template = {
