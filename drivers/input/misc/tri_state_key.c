@@ -75,7 +75,7 @@ struct switch_dev_data {
 
 };
 
-static int current_mode = 0;
+static int current_mode = -1;// 0 := MODE_MUTE ; 1 := MODE_DO_NOT_DISTURB ; 2 := MODE_NORMAL
 static int keyCode_slider_top = 600;
 static int keyCode_slider_middle = 601;
 static int keyCode_slider_bottom = 602;
@@ -109,21 +109,22 @@ static void switch_dev_work(struct work_struct *work)
 		if(!gpio_get_value(switch_data->key2_gpio))
 		{
 		    switch_set_state(&switch_data->sdev, MODE_NORMAL);
-		    send_input(keyCode_slider_bottom);
+		    current_mode = 2;
 		}
 		else
 		{
 		    if(gpio_get_value(switch_data->key1_gpio))
 		    {
 		        switch_set_state(&switch_data->sdev, MODE_DO_NOT_DISTURB);
-		        send_input(keyCode_slider_middle);
+		        current_mode = 1;
 			}
 		    else
 		    {
 		        switch_set_state(&switch_data->sdev, MODE_MUTE);
-		        send_input(keyCode_slider_top);
+		        current_mode = 0;
 			}
 		}
+		send_input(current_mode + 600);
 		printk("%s ,tristate set to state(%d) \n",__func__,switch_data->sdev.state);
 		printk("%s ,sending input signal %d",__func__,switch_data->sdev.state);
 	}
@@ -134,21 +135,23 @@ static void switch_dev_work(struct work_struct *work)
 		if(!gpio_get_value(switch_data->key2_gpio))
 		{
 		    switch_set_state(&switch_data->sdev, MODE_NORMAL);
-		    send_input(keyCode_slider_bottom);
+		    current_mode = 2;
 		}
 
 		if(!gpio_get_value(switch_data->key3_gpio))
 		{
 		    switch_set_state(&switch_data->sdev, MODE_DO_NOT_DISTURB);
-		    send_input(keyCode_slider_middle);
+		    current_mode = 1;
 		}
 
 		if(!gpio_get_value(switch_data->key1_gpio))
 		{
 		    switch_set_state(&switch_data->sdev, MODE_MUTE);
 		    send_input(keyCode_slider_top);
+		    current_mode = 0;
 		}
-		printk("%s ,sending input signal %d",__func__,switch_data->sdev.state);
+		send_input(current_mode + 600);
+		printk("%s ,sending input signal %d",__func__,current_mode + 600);
 	}
 
 	mutex_unlock(&sem);
@@ -351,7 +354,7 @@ static ssize_t keyCode_slider_top_store(struct device *dev,
 		return -EINVAL;
 
 	keyCode_slider_top = data;
-	if (current_mode == 1)
+	if (current_mode == 0)
 		send_input(keyCode_slider_top);
 
 	return strnlen(buf, count);
@@ -374,7 +377,7 @@ static ssize_t keyCode_slider_middle_store(struct device *dev,
 		return -EINVAL;
 
 	keyCode_slider_middle = data;
-	if (current_mode == 2)
+	if (current_mode == 1)
 		send_input(keyCode_slider_middle);
 
 	return strnlen(buf, count);
@@ -397,7 +400,7 @@ static ssize_t keyCode_slider_bottom_store(struct device *dev,
 		return -EINVAL;
 
 	keyCode_slider_bottom = data;
-	if (current_mode == 3)
+	if (current_mode == 2)
 		send_input(keyCode_slider_bottom);
 
 	return strnlen(buf, count);
