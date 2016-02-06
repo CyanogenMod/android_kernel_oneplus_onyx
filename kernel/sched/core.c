@@ -88,6 +88,10 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
+#ifdef VENDOR_EDIT
+//add by huruihuan for tradeoff performence and power
+#include <linux/oneplus.h>
+#endif
 ATOMIC_NOTIFIER_HEAD(migration_notifier_head);
 
 void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period)
@@ -1671,9 +1675,23 @@ stat:
 out:
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
 
-	if (notify)
-		atomic_notifier_call_chain(&migration_notifier_head,
-					   cpu, (void *)src_cpu);
+#ifdef VENDOR_EDIT
+	if (notify)	{
+//add by huruihuan for tradeoff performence and power 
+        if(boost_game_only) {
+            if(p->game_flag == PROCESS_RENDER_THREAD)
+                atomic_notifier_call_chain(&migration_notifier_head,
+                            cpu, (void *)src_cpu);
+        }
+        else
+            atomic_notifier_call_chain(&migration_notifier_head,
+                        cpu, (void *)src_cpu);
+    }
+#else
+    if (notify)
+        atomic_notifier_call_chain(&migration_notifier_head,
+                        cpu, (void *)src_cpu);
+#endif
 	return success;
 }
 
@@ -5141,9 +5159,23 @@ done:
 fail:
 	double_rq_unlock(rq_src, rq_dest);
 	raw_spin_unlock(&p->pi_lock);
+#ifdef VENDOR_EDIT
+	if (moved && task_notify_on_migrate(p)) {
+//add by huruihuan for tradeoff performence and power 
+        if(boost_game_only) {
+            if(p->game_flag == PROCESS_RENDER_THREAD)
+                atomic_notifier_call_chain(&migration_notifier_head,
+                                dest_cpu, (void *)src_cpu);
+        }
+        else
+            atomic_notifier_call_chain(&migration_notifier_head,
+                            dest_cpu, (void *)src_cpu);
+    }
+#else
 	if (moved && task_notify_on_migrate(p))
 		atomic_notifier_call_chain(&migration_notifier_head,
-					   dest_cpu, (void *)src_cpu);
+						dest_cpu, (void *)src_cpu);
+#endif
 	return ret;
 }
 
