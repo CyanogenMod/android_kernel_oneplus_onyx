@@ -21,7 +21,6 @@
 #include <linux/regulator/consumer.h>
 #include "s5k3m2.h"
 
-#define I2C_USER_REG_DATA_MAX 1024
 /*#define CONFIG_MSMB_CAMERA_DEBUG*/
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
