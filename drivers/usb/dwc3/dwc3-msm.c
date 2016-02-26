@@ -165,11 +165,6 @@ MODULE_PARM_DESC(prop_chg_detect, "Enable Proprietary charger detection");
 #define PWR_EVNT_IRQ_STAT_REG    (QSCRATCH_REG_OFFSET + 0x58)
 #define PWR_EVNT_IRQ_MASK_REG    (QSCRATCH_REG_OFFSET + 0x5C)
 
-/* Fix OTG switch cause reboot issue.+*/
-extern struct completion complet_dwc3;
-extern bool running;
-/* Fix OTG switch cause reboot issue.-*/
-
 struct dwc3_msm_req_complete {
 	struct list_head list_item;
 	struct usb_request *req;
@@ -1916,8 +1911,6 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc)
 
 	if (atomic_read(&mdwc->in_lpm)) {
 		dev_dbg(mdwc->dev, "%s: Already suspended\n", __func__);
-		running = false;
-		complete(&complet_dwc3);/* Fix OTG switch cause reboot issue.*/
 		return 0;
 	}
 
@@ -2054,8 +2047,6 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc)
 		}
 		enable_irq(mdwc->hs_phy_irq);
 	}
-	running = false;
-	complete(&complet_dwc3);/* Fix OTG switch cause reboot issue.*/
 	return 0;
 }
 

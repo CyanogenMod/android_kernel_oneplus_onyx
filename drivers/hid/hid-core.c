@@ -38,13 +38,6 @@
 
 #include "hid-ids.h"
 
-/* Fix OTG switch cause reboot issue.+*/
-extern struct completion complet_xhci;
-extern struct completion complet_dwc3;
-extern bool running;
-extern int otg_current_state;
-/* Fix OTG switch cause reboot issue.-*/
-
 /*
  * Version Information
  */
@@ -1302,21 +1295,9 @@ int hid_connect(struct hid_device *hdev, unsigned int connect_mask)
 	hid_info(hdev, "%s: %s HID v%x.%02x %s [%s] on %s\n",
 		 buf, bus, hdev->version >> 8, hdev->version & 0xff,
 		 type, hdev->name, hdev->phys);
-	/* Fix OTG switch cause reboot issue.+*/
-	running = false;
-	otg_current_state = 1;
-	complete(&complet_xhci);
-	complete(&complet_dwc3);
-	/* Fix OTG switch cause reboot issue.-*/
 	return 0;
 
 err:
-	/* Fix OTG switch cause reboot issue.+*/
-	running = false;
-	otg_current_state = 1;
-	complete(&complet_xhci);
-	complete(&complet_dwc3);
-	/* Fix OTG switch cause reboot issue.-*/
 	return -ENODEV;
 }
 EXPORT_SYMBOL_GPL(hid_connect);
