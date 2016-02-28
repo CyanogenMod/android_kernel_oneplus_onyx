@@ -8,13 +8,14 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/seq_file.h>
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/ioport.h>
 #include <linux/platform_device.h>
+#include <linux/proc_fs.h>
 #include <linux/gpio.h>
 #include <linux/gpio_keys.h>
-#include <linux/of_device.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
 
@@ -31,9 +32,9 @@
 
 /*
 	        KEY1(GPIO1)	KEY2(GPIO92)
-1�ź�4������	0	            1         | MUTE
-2�ź�5������	1	            1         | Do Not Disturb
-4�ź�3������	1	            0         | Normal
+1脚和4脚连接	0	            1         | MUTE
+2脚和5脚连接	1	            1         | Do Not Disturb
+4脚和3脚连接	1	            0         | Normal 
 
 */
 typedef enum {
@@ -43,6 +44,16 @@ typedef enum {
 	MODE_NORMAL,
 	MODE_MAX_NUM
 } tri_mode_t;
+
+#define MODE_TOTAL_SILENCE 600
+#define MODE_ALARMS_ONLY 601
+#define MODE_PRIORITY_ONLY 602
+#define MODE_NONE 603
+
+static int current_mode = 0;
+static int keyCode_slider_top = MODE_ALARMS_ONLY;
+static int keyCode_slider_middle = MODE_PRIORITY_ONLY;
+static int keyCode_slider_bottom = MODE_NONE;
 
 typedef enum {
  hw_old,
@@ -75,10 +86,6 @@ struct switch_dev_data {
 
 };
 
-static int current_mode = -1;// 0 := MODE_MUTE ; 1 := MODE_DO_NOT_DISTURB ; 2 := MODE_NORMAL
-static int keyCode_slider_top = 600;
-static int keyCode_slider_middle = 601;
-static int keyCode_slider_bottom = 602;
 static struct switch_dev_data *switch_data;
 static DEFINE_MUTEX(sem);
 /*
@@ -91,71 +98,71 @@ static int set_gpio_by_pinctrl(void)
 
 static void send_input(int keyCode)
 {
-	input_report_key(switch_data->input,keyCode,1);
+	input_report_key(switch_data->input,keyCode, 1);
 	input_sync(switch_data->input);
-	input_report_key(switch_data->input,keyCode,0);
+	input_report_key(switch_data->input,keyCode, 0);
 	input_sync(switch_data->input);
 }
 
 static int hw_version;
 static void switch_dev_work(struct work_struct *work)
 {
+	int keyCode;
+	int mode;
 	//pr_err("%s  gpio_get_value(%d)=%d\n",__func__,switch_data->key1_gpio,gpio_get_value(switch_data->key1_gpio));
 	//pr_err("%s  gpio_get_value(%d)=%d\n",__func__,switch_data->key2_gpio,gpio_get_value(switch_data->key2_gpio));
 	//pr_err("%s  gpio_get_value(%d)=%d\n",__func__,switch_data->key3_gpio,gpio_get_value(switch_data->key3_gpio));
 
-      mutex_lock(&sem);
-	if(hw_version==hw_old){
-		if(!gpio_get_value(switch_data->key2_gpio))
+	mutex_lock(&sem);
+	if (hw_version == hw_old) {
+		if (!gpio_get_value(switch_data->key2_gpio))
 		{
-		    switch_set_state(&switch_data->sdev, MODE_NORMAL);
-		    current_mode = 2;
+			mode = MODE_NORMAL;
+			keyCode = keyCode_slider_bottom;
+		}
+		else if (gpio_get_value(switch_data->key1_gpio))
+		{
+			mode = MODE_DO_NOT_DISTURB;
+		 	keyCode = keyCode_slider_middle;
 		}
 		else
 		{
-		    if(gpio_get_value(switch_data->key1_gpio))
-		    {
-		        switch_set_state(&switch_data->sdev, MODE_DO_NOT_DISTURB);
-		        current_mode = 1;
-			}
-		    else
-		    {
-		        switch_set_state(&switch_data->sdev, MODE_MUTE);
-		        current_mode = 0;
-			}
+			mode = MODE_MUTE;
+			keyCode = keyCode_slider_top;
 		}
-		send_input(current_mode + 600);
-		printk("%s ,tristate set to state(%d) \n",__func__,switch_data->sdev.state);
-		printk("%s ,sending input signal %d",__func__,switch_data->sdev.state);
 	}
 	else if (hw_version == hw_new)
-		{
-		gpio_set_value(switch_data->key3_gpio,0);
+	{
+		gpio_set_value(switch_data->key3_gpio, 0);
 		//pr_err("%s  gpio_22get_value(%d)=%d\n",__func__,switch_data->key3_gpio,gpio_get_value(switch_data->key3_gpio));
-		if(!gpio_get_value(switch_data->key2_gpio))
+		if (!gpio_get_value(switch_data->key2_gpio))
 		{
-		    switch_set_state(&switch_data->sdev, MODE_NORMAL);
-		    current_mode = 2;
+			mode = MODE_NORMAL;
+			keyCode = keyCode_slider_bottom;
 		}
+		else if (!gpio_get_value(switch_data->key3_gpio))
+		{
+			mode = MODE_DO_NOT_DISTURB;
+			keyCode = keyCode_slider_middle;
+		}
+		else if (!gpio_get_value(switch_data->key1_gpio))
+		{
+			mode = MODE_MUTE;
+			keyCode = keyCode_slider_top;
+		}
+	}
 
-		if(!gpio_get_value(switch_data->key3_gpio))
-		{
-		    switch_set_state(&switch_data->sdev, MODE_DO_NOT_DISTURB);
-		    current_mode = 1;
-		}
-
-		if(!gpio_get_value(switch_data->key1_gpio))
-		{
-		    switch_set_state(&switch_data->sdev, MODE_MUTE);
-		    send_input(keyCode_slider_top);
-		    current_mode = 0;
-		}
-		send_input(current_mode + 600);
-		printk("%s ,sending input signal %d",__func__,current_mode + 600);
+	if (current_mode != mode)
+	{
+		current_mode = mode;
+		switch_set_state(&switch_data->sdev, current_mode);
+		send_input(keyCode);
+		printk("%s, tristate set to state(%d) \n", __func__, current_mode);
 	}
 
 	mutex_unlock(&sem);
 }
+
 irqreturn_t switch_dev_interrupt(int irq, void *_dev)
 {
 //printk("%s\n",__func__);
@@ -337,94 +344,143 @@ err:
 }
 
 */
-static ssize_t keyCode_slider_top_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+
+static int keyCode_top_show(struct seq_file *seq, void *offset)
 {
-	return snprintf(buf, PAGE_SIZE, "%d\n", keyCode_slider_top);
+    seq_printf(seq, "%d\n", keyCode_slider_top);
+    return 0;
 }
 
-static ssize_t keyCode_slider_top_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t keyCode_top_write(struct file *file, const char __user *page, size_t t, loff_t *lo)
 {
 	int data;
+	char buf[10];
+
+	if (copy_from_user(buf, page, t))
+	{
+		dev_err(switch_data->dev, "read proc input error.\n");
+		return t;
+	}
 
 	if (sscanf(buf, "%d", &data) != 1)
-		return -EINVAL;
-	if (data != 600 && data != 601 && data != 602)
-		return -EINVAL;
+		return t;
+	if (data < 600 || data > 603)
+		return t;
 
 	keyCode_slider_top = data;
-	if (current_mode == 0)
+	if (current_mode == MODE_MUTE)
 		send_input(keyCode_slider_top);
 
-	return strnlen(buf, count);
+	return t;
 }
 
-static ssize_t keyCode_slider_middle_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+static int keyCode_top_open(struct inode *inode, struct file *file)
 {
-	return snprintf(buf, PAGE_SIZE, "%d\n", keyCode_slider_middle);
+	return single_open(file, keyCode_top_show, inode->i_private);
 }
 
-static ssize_t keyCode_slider_middle_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+const struct file_operations proc_keyCode_top =
 {
-	int data;
-
-	if (sscanf(buf, "%d", &data) != 1)
-		return -EINVAL;
-	if (data != 600 && data != 601 && data != 602)
-		return -EINVAL;
-
-	keyCode_slider_middle = data;
-	if (current_mode == 1)
-		send_input(keyCode_slider_middle);
-
-	return strnlen(buf, count);
-}
-
-static ssize_t keyCode_slider_bottom_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n", keyCode_slider_bottom);
-}
-
-static ssize_t keyCode_slider_bottom_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
-{
-	int data;
-
-	if (sscanf(buf, "%d", &data) != 1)
-		return -EINVAL;
-	if (data != 600 && data != 601 && data != 602)
-		return -EINVAL;
-
-	keyCode_slider_bottom = data;
-	if (current_mode == 2)
-		send_input(keyCode_slider_bottom);
-
-	return strnlen(buf, count);
-}
-
-/* sysfs attributes */
-static struct device_attribute keyCode_attrs[] = {
-	__ATTR(keyCode_top, (S_IRUGO | S_IWUSR | S_IWGRP),
-			keyCode_slider_top_show,
-			keyCode_slider_top_store),
-	__ATTR(keyCode_middle, (S_IRUGO | S_IWUSR | S_IWGRP),
-			keyCode_slider_middle_show,
-			keyCode_slider_middle_store),
-	__ATTR(keyCode_bottom, (S_IRUGO | S_IWUSR | S_IWGRP),
-			keyCode_slider_bottom_show,
-			keyCode_slider_bottom_store),
+	.owner		= THIS_MODULE,
+	.open		= keyCode_top_open,
+	.read		= seq_read,
+	.write		= keyCode_top_write,
+	.llseek 	= seq_lseek,
+	.release	= single_release,
 };
 
+static int keyCode_middle_show(struct seq_file *seq, void *offset)
+{
+    seq_printf(seq, "%d\n", keyCode_slider_middle);
+    return 0;
+}
+
+static ssize_t keyCode_middle_write(struct file *file, const char __user *page, size_t t, loff_t *lo)
+{
+	int data;
+	char buf[10];
+
+	if (copy_from_user(buf, page, t))
+	{
+		dev_err(switch_data->dev, "read proc input error.\n");
+		return t;
+	}
+
+	if (sscanf(buf, "%d", &data) != 1)
+		return t;
+	if (data < 600 || data > 603)
+		return t;
+
+	keyCode_slider_middle = data;
+	if (current_mode == MODE_DO_NOT_DISTURB)
+		send_input(keyCode_slider_middle);
+
+	return t;
+}
+
+static int keyCode_middle_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, keyCode_middle_show, inode->i_private);
+}
+
+const struct file_operations proc_keyCode_middle =
+{
+	.owner		= THIS_MODULE,
+	.open		= keyCode_middle_open,
+	.read		= seq_read,
+	.write		= keyCode_middle_write,
+	.llseek 	= seq_lseek,
+	.release	= single_release,
+};
+
+static int keyCode_bottom_show(struct seq_file *seq, void *offset)
+{
+    seq_printf(seq, "%d\n", keyCode_slider_bottom);
+    return 0;
+}
+
+static ssize_t keyCode_bottom_write(struct file *file, const char __user *page, size_t t, loff_t *lo)
+{
+	int data;
+	char buf[10];
+
+	if (copy_from_user(buf, page, t))
+	{
+		dev_err(switch_data->dev, "read proc input error.\n");
+		return t;
+	}
+
+	if (sscanf(buf, "%d", &data) != 1)
+		return t;
+	if (data < 600 || data > 603)
+		return t;
+
+	keyCode_slider_bottom = data;
+	if (current_mode == MODE_NORMAL)
+		send_input(keyCode_slider_bottom);
+
+	return t;
+}
+
+static int keyCode_bottom_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, keyCode_bottom_show, inode->i_private);
+}
+
+const struct file_operations proc_keyCode_bottom =
+{
+	.owner		= THIS_MODULE,
+	.open		= keyCode_bottom_open,
+	.read		= seq_read,
+	.write		= keyCode_bottom_write,
+	.llseek 	= seq_lseek,
+	.release	= single_release,
+};
 
 static int tristate_dev_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-
-	int i;
+	struct proc_dir_entry *procdir;
 	int error=0;
 
 	//void __iomem *cfg_reg;
@@ -453,9 +509,10 @@ static int tristate_dev_probe(struct platform_device *pdev)
         switch_data->input->name = DRV_NAME;
         switch_data->input->dev.parent = &pdev->dev;
         set_bit(EV_KEY, switch_data->input->evbit);
-        set_bit(keyCode_slider_top,switch_data->input->keybit);
-        set_bit(keyCode_slider_middle, switch_data->input->keybit);
-        set_bit(keyCode_slider_bottom, switch_data->input->keybit);
+        set_bit(MODE_TOTAL_SILENCE, switch_data->input->keybit);
+	set_bit(MODE_ALARMS_ONLY, switch_data->input->keybit);
+	set_bit(MODE_PRIORITY_ONLY, switch_data->input->keybit);
+	set_bit(MODE_NONE, switch_data->input->keybit);
         input_set_drvdata(switch_data->input, switch_data);
         error = input_register_device(switch_data->input);
 
@@ -610,16 +667,12 @@ static int tristate_dev_probe(struct platform_device *pdev)
 		 //set_gpio_by_pinctrl();
         //report the first switch
         //switch_dev_work(&switch_data->work);
-        for (i=0; i < ARRAY_SIZE(keyCode_attrs); i++)
-        {
-			error = sysfs_create_file(&switch_data->dev->kobj,
-				&keyCode_attrs[i].attr);
-		}
-		if (error < 0)
-		{
-			dev_err(dev, "sysfs creation failed\n");
-			goto err_sysfs;
-		}
+
+	procdir = proc_mkdir("tri-state-key", NULL);
+	proc_create_data("keyCode_top", 0666, procdir, &proc_keyCode_top, NULL);
+	proc_create_data("keyCode_middle", 0666, procdir, &proc_keyCode_middle, NULL);
+	proc_create_data("keyCode_bottom", 0666, procdir, &proc_keyCode_bottom, NULL);
+
         return 0;
 
 
@@ -636,11 +689,6 @@ err_switch_dev_register:
 	kfree(switch_data);
 	input_unregister_device(switch_data->input);
 	input_free_device(switch_data->input);
-err_sysfs:
-	for (i=3; i >= 0; i--)
-	{
-		sysfs_remove_file(&switch_data->dev->kobj,&keyCode_attrs[i].attr);
-	}
 
 	return error;
 }
