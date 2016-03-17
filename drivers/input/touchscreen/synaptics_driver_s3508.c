@@ -130,7 +130,7 @@ struct test_header {
 
 // carlo@oneplus.net 2015-05-25, begin.
 #ifdef VENDOR_EDIT
-#define KEY_DOUBLE_TAP          KEY_POWER // double tap to wake
+#define KEY_DOUBLE_TAP          KEY_WAKEUP // double tap to wake
 #define KEY_GESTURE_CIRCLE      250 // draw circle to lunch camera
 #define KEY_GESTURE_TWO_SWIPE	251 // swipe two finger vertically to play/pause
 #define KEY_GESTURE_V           252 // draw v to toggle flashlight
