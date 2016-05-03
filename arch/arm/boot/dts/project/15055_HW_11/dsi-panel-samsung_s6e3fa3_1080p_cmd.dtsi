@@ -53,7 +53,7 @@
 		29 01 00 00 00 00 03 FC 5A 5A
 		15 01 00 00 00 00 02 B0 1E
 		15 01 00 00 00 00 02 FD 9E
-		29 01 00 00 82 00 03 FC A5 A5];
+		29 01 00 00 04 00 03 FC A5 A5];
 		qcom,mdss-dsi-off-command = [05 01 00 00 28 00 02 28 00
 					05 01 00 00 A0 00 02 10 00];
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
