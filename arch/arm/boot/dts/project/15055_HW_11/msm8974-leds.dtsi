@@ -12,50 +12,24 @@
  */
 
 &pm8941_lsid1 {
-
-	qcom,leds@d800 {
-		status = "disabled";
-		qcom,wled_0 {
-			label = "wled";
-			linux,name = "wled:backlight";
-			linux,default-trigger = "bkl-trigger";
-			qcom,cs-out-en;
-			qcom,op-fdbck = <1>;
-			qcom,default-state = "on";
-			qcom,max-current = <25>;
-			qcom,ctrl-delay-us = <0>;
-			qcom,boost-curr-lim = <5>;
-			qcom,cp-sel = <0>;
-			qcom,switch-freq = <11>;
-			qcom,ovp-val = <2>;
-			qcom,num-strings = <3>;
-			qcom,id = <0>;
-		};
-	};
-
 	qcom,leds@d000 {
 		status = "okay";
 		qcom,rgb_0 {
 			label = "rgb";
-			qcom,id = <3>;
 			linux,name = "red";
 			qcom,mode = "pwm";
 			qcom,pwm-channel = <6>;
 			qcom,pwm-us = <1000>;
 			qcom,max-current = <12>;
 			qcom,default-state = "off";
-			qcom,duty-pcts = [00 05 0a 0f 14 1d 28 32 3c 4b 64];
-			qcom,duty-ms = <20>;
-			qcom,start-idx = <1>;
-			qcom,idx-len = <11>;
-
-				qcom,lut-flags = <0x1f>;
-				qcom,ramp-step-ms = <100>;
-				qcom,pause-lo = <2000>;
-				qcom,pause-hi = <1000>;
-			/*linux,default-trigger =
-				"battery-charging";
-				*/
+			qcom,id = <3>;
+			qcom,duty-pcts = [00 19 32 4B 64 64 4B 32 19 00];
+			qcom,lut-flags = <19>;
+			qcom,pause-hi = <0>;
+			qcom,pause-lo = <0>;
+			qcom,ramp-step-ms = <100>;
+			qcom,start-idx = <0>;
+			qcom,turn-off-delay-ms = <500>;
 			qcom,use-blink;
 		};
 
@@ -63,23 +37,18 @@
 			label = "rgb";
 			linux,name = "green";
 			qcom,mode = "pwm";
-			qcom,id = <4>;
 			qcom,pwm-channel = <5>;
 			qcom,pwm-us = <1000>;
 			qcom,max-current = <12>;
 			qcom,default-state = "off";
-				qcom,duty-pcts = [00 05 0a 0f 14 1d 28 32 3c 4b 64];
-				qcom,duty-ms = <20>;
-				qcom,start-idx = <13>;
-				qcom,idx-len = <11>;
-
-
-			qcom,lut-flags = <0x1f>;
+			qcom,id = <4>;
+			qcom,duty-pcts = [00 19 32 4B 64 64 4B 32 19 00];
+			qcom,lut-flags = <19>;
+			qcom,pause-hi = <0>;
+			qcom,pause-lo = <0>;
 			qcom,ramp-step-ms = <100>;
-			qcom,pause-lo = <2000>;
-			qcom,pause-hi = <1000>;
-
-			//linux,default-trigger = "battery-full";
+			qcom,start-idx = <21>;
+			qcom,turn-off-delay-ms = <500>;
 			qcom,use-blink;
 		};
 
@@ -90,18 +59,14 @@
 			qcom,pwm-channel = <4>;
 			qcom,pwm-us = <1000>;
 			qcom,max-current = <12>;
-
-				qcom,duty-pcts = [00 05 0a 0f 14 1d 28 32 3c 4b 64];
-				qcom,duty-ms = <20>;
-				qcom,start-idx = <13>;
-				qcom,idx-len = <11>;
-
-				qcom,lut-flags = <0x1f>;
-				qcom,ramp-step-ms = <100>;
-				qcom,pause-lo = <2000>;
-				qcom,pause-hi = <1000>;
-
 			qcom,id = <5>;
+			qcom,duty-pcts = [00 19 32 4B 64 64 4B 32 19 00];
+			qcom,lut-flags = <19>;
+			qcom,pause-hi = <0>;
+			qcom,pause-lo = <0>;
+			qcom,ramp-step-ms = <100>;
+			qcom,start-idx = <42>;
+			qcom,turn-off-delay-ms = <500>;
 			qcom,use-blink;
 		};
 	};
@@ -178,22 +143,18 @@
 	qcom,leds@d700 {
 		status = "disabled";
 	};
-/*VENDOR_EDIT*/
-/*OPPO yuyi 2013-09-27 modify begin for button-backlight*/
+
 	qcom,leds@e200 {
-		status = "okay";
+		status = "disabled";
 
 		qcom,kpdbl1 {
 			label = "kpdbl";
-			linux,name = "button-backlight";
+			linux,name = "kpdbl-pwm-1";
 			qcom,mode = "pwm";
 			qcom,pwm-channel = <8>;
 			qcom,pwm-us = <1000>;
 			qcom,id = <7>;
-			/*OPPO yuyi 2013-11-26 modify current for button-backlight*/
-			/*qcom,max-current = <20>;*/
-			qcom,max-current = <15>;
-			/*OPPO yuyi 2013-11-26 modify end for button-backlight*/
+			qcom,max-current = <20>;
 			qcom,row-id = <0>;
 			qcom,row-src-en;
 			qcom,always-on;
@@ -204,8 +165,7 @@
 			qcom,use-blink;
 			qcom,in-order-command-processing;
 		};
-/*OPPO yuyi 2013-09-27 modify end for button-backlight*/
-/*
+
 		qcom,kpdbl2 {
 			label = "kpdbl";
 			linux,name = "kpdbl-pwm-2";
@@ -262,6 +222,5 @@
                         qcom,in-order-command-processing;
 
 		};
-		*/
 	};
 };
