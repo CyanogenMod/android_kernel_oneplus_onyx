@@ -964,7 +964,7 @@ VOS_STATUS wlan_hdd_get_frame_logs(hdd_adapter_t *pAdapter, v_U8_t flag)
    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
    if (!pHddCtx->mgmt_frame_logging)
    {
-      hddLog(VOS_TRACE_LEVEL_DEBUG,"%s: Frame Logging not init!", __func__);
+      hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Frame Logging not init!", __func__);
       return VOS_STATUS_E_AGAIN;
    }
 
@@ -5393,16 +5393,16 @@ static int __iw_setint_getnone(struct net_device *dev,
         return ret;
     }
 
-    hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
-    if (NULL == hHal)
-    {
-        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-                 "%s: Hal Context is NULL",__func__);
-        return -EINVAL;
-    }
-
     if ( VOS_MONITOR_MODE != hdd_get_conparam())
     {
+      /* In monitor mode hHal is NULL */
+      hHal = WLAN_HDD_GET_HAL_CTX(pAdapter);
+      if (NULL == hHal)
+      {
+          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 "%s: Hal Context is NULL",__func__);
+          return -EINVAL;
+      }
       pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
       if (NULL == pWextState)
       {
