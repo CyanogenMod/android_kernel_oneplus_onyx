@@ -1301,15 +1301,10 @@
 	qcom,vibrator@c000 {
 		compatible = "qcom,qpnp-vibrator";
 		reg = <0xc000 0x100>;
-/* OPPO yuyi 2013-09-27 add begin for vibrator*/
 		qcom,vib-timeout-ms = <15000>;
 		qcom,vib-vtg-level-mV = <3100>;
-/* OPPO yuyi 2013-09-27 add end for vibrator*/
-		label = "vibrator";
-/* OPPO yuyi 2013-09-27 modify begin for vibrator*/
-	//	status = "disabled";
+		qcom,vib-vtg-min-mV = <1900>;
 		status = "okay";
-/* OPPO yuyi 2013-09-27 modify end for vibrator*/		
 	};
 
 	qcom,leds@d000 {
