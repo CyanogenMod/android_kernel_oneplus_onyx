@@ -18,9 +18,7 @@
 / {
 	model = "Qualcomm MSM 8974Pro-AC MTP";
 	compatible = "qcom,msm8974-mtp", "qcom,msm8974", "qcom,mtp";
-	qcom,board-id = <8 0>;
-	qcom,product-name = "15055";
-	qcom,hw-ver = <11>;
+	qcom,board-id = <8 0 15055 11>;
 };
 
 &sdhc_1 {
