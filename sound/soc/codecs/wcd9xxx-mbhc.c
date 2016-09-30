@@ -119,9 +119,15 @@
 
 /* RX_HPH_CNP_WG_TIME increases by 0.24ms */
 #define WCD9XXX_WG_TIME_FACTOR_US	240
-
+#ifndef VENDOR_EDIT
+/*wangdongdong@MultiMedia.AudioDrv,2015/06/09,add for headset detect*/
 #define WCD9XXX_V_CS_HS_MAX 500
 #define WCD9XXX_V_CS_NO_MIC 5
+#else
+#define WCD9XXX_V_CS_HS_MAX 750 /*wangdongdong@MultiMedia.AudioDrv,2015/07/17,change from 1000 for EU headset*/
+#define WCD9XXX_V_CS_NO_MIC 10
+#define WCD9XXX_V_CS_NO_MIC_A 5
+#endif
 #define WCD9XXX_MB_MEAS_DELTA_MAX_MV 80
 #define WCD9XXX_CS_MEAS_DELTA_MAX_MV 12
 
@@ -176,7 +182,6 @@ enum wcd9xxx_current_v_idx {
 	WCD9XXX_CURRENT_V_B1_HU,
 	WCD9XXX_CURRENT_V_BR_H,
 };
-
 static int wcd9xxx_detect_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 				    uint32_t *zr);
 static s16 wcd9xxx_get_current_v(struct wcd9xxx_mbhc *mbhc,
@@ -857,6 +862,12 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 		mbhc->zl = mbhc->zr = 0;
 		pr_debug("%s: Reporting removal %d(%x)\n", __func__,
 			 jack_type, mbhc->hph_status);
+#ifdef VENDOR_EDIT
+		 //liuyan 2013-3-13 add
+		switch_set_state(&mbhc->wcd9xxx_sdev,0);
+		printk("%s: Reporting removal %d(%x)\n", __func__,
+			 jack_type, mbhc->hph_status);
+#endif
 		wcd9xxx_jack_report(mbhc, &mbhc->headset_jack, mbhc->hph_status,
 				    WCD9XXX_JACK_MASK);
 		wcd9xxx_set_and_turnoff_hph_padac(mbhc);
@@ -922,6 +933,34 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 
 		pr_debug("%s: Reporting insertion %d(%x)\n", __func__,
 			 jack_type, mbhc->hph_status);
+	#ifdef VENDOR_EDIT
+              //liuyan 2013-3-13 add
+              switch(mbhc->current_plug){
+               case PLUG_TYPE_HEADPHONE:
+		case PLUG_TYPE_HIGH_HPH:
+			mbhc->mbhc_cfg->headset_type = 0;
+			switch_set_state(&mbhc->wcd9xxx_sdev,2);
+			break;
+	        case PLUG_TYPE_GND_MIC_SWAP:
+			mbhc->mbhc_cfg->headset_type = 0;
+			//gpio_set_value(mbhc->mbhc_cfg->hpmic_switch_gpio,1);
+			switch_set_state(&mbhc->wcd9xxx_sdev,1);
+			//mdelay(20);
+			break;
+		 case PLUG_TYPE_HEADSET:
+		 	mbhc->mbhc_cfg->headset_type = 1;
+		 	//gpio_set_value(mbhc->mbhc_cfg->hpmic_switch_gpio,0);
+		 	switch_set_state(&mbhc->wcd9xxx_sdev,1);
+			break;
+		default:
+			mbhc->mbhc_cfg->headset_type = 0;
+			switch_set_state(&mbhc->wcd9xxx_sdev,0);
+			break;
+		}
+              printk("%s: Reporting insertion %d(%x)\n", __func__,
+			 jack_type, mbhc->hph_status);
+	       // liuyan add end
+	#endif
 		wcd9xxx_jack_report(mbhc, &mbhc->headset_jack,
 				    mbhc->hph_status, WCD9XXX_JACK_MASK);
 		wcd9xxx_clr_and_turnon_hph_padac(mbhc);
@@ -1451,7 +1490,10 @@ wcd9xxx_cs_find_plug_type(struct wcd9xxx_mbhc *mbhc,
 		     d->_vdces <= WCD9XXX_MEAS_INVALD_RANGE_HIGH_MV))) {
 			pr_debug("%s: within invalid range\n", __func__);
 			type = PLUG_TYPE_INVALID;
+// But Why?
+#ifndef VENDOR_EDIT
 			goto exit;
+#endif
 		}
 	}
 
@@ -3558,6 +3600,11 @@ irqreturn_t wcd9xxx_dce_handler(int irq, void *data)
 			__func__);
 		goto done;
 	}
+//liuan 2013-4-18 add
+#ifdef VENDOR_EDIT
+       printk("press button\n");
+#endif
+//liuyan add end
 
 	/* If switch nterrupt already kicked in, ignore button press */
 	if (mbhc->in_swch_irq_handler) {
@@ -3725,7 +3772,11 @@ static irqreturn_t wcd9xxx_release_handler(int irq, void *data)
 	int ret;
 	bool waitdebounce = true;
 	struct wcd9xxx_mbhc *mbhc = data;
-
+//liuyan 2013-4-18 add
+#ifdef VENDOR_EDIT
+        printk("release button\n");
+#endif
+//liuyan add end
 	pr_debug("%s: enter\n", __func__);
 	WCD9XXX_BCL_LOCK(mbhc->resmgr);
 	mbhc->mbhc_state = MBHC_STATE_RELEASE;
@@ -4992,6 +5043,22 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 		ret = snd_jack_set_key(mbhc->button_jack.jack,
 				       SND_JACK_BTN_0,
 				       KEY_MEDIA);
+#ifdef VENDOR_EDIT
+/* xiaojun.lv@Prd.AudioDrv,2014/3/7,add for 14001 headset input key value*/
+/* BTN_1 BTN_2 add for digital mode*/
+		ret = snd_jack_set_key(mbhc->button_jack.jack,
+				       SND_JACK_BTN_1,
+				       KEY_VOLUMEDOWN);
+		ret = snd_jack_set_key(mbhc->button_jack.jack,
+				       SND_JACK_BTN_2,
+				       KEY_VOLUMEUP);
+		ret = snd_jack_set_key(mbhc->button_jack.jack,
+				       SND_JACK_BTN_3,
+				       KEY_VOLUMEUP);
+		ret = snd_jack_set_key(mbhc->button_jack.jack,
+				       SND_JACK_BTN_7,
+				       KEY_VOLUMEDOWN);
+#endif /* CONFIG_OPPO_MSM_14001 */
 		if (ret) {
 			pr_err("%s: Failed to set code for btn-0\n",
 				__func__);
