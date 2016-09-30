@@ -90,6 +90,7 @@ static const struct mmc_fixup mmc_fixups[] = {
 static int mmc_decode_cid(struct mmc_card *card)
 {
 	u32 *resp = card->raw_cid;
+	char *manufactureid;
 
 	/*
 	 * The selection of the format here is based upon published
@@ -316,7 +317,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	/* Version is coded in the CSD_STRUCTURE byte in the EXT_CSD register */
 	card->ext_csd.raw_ext_csd_structure = ext_csd[EXT_CSD_STRUCTURE];
 	if (card->csd.structure == 3) {
-		if (card->ext_csd.raw_ext_csd_structure > 2) {
+		if (card->ext_csd.raw_ext_csd_structure > 8) {
 			pr_err("%s: unrecognised EXT_CSD structure "
 				"version %d\n", mmc_hostname(card->host),
 					card->ext_csd.raw_ext_csd_structure);
@@ -326,7 +327,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	}
 
 	card->ext_csd.rev = ext_csd[EXT_CSD_REV];
-	if (card->ext_csd.rev > 7) {
+	if (card->ext_csd.rev > 8) {
 		pr_err("%s: unrecognised EXT_CSD revision %d\n",
 			mmc_hostname(card->host), card->ext_csd.rev);
 		err = -EINVAL;
