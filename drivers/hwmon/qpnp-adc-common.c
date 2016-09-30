@@ -44,6 +44,40 @@
    and provided to the battery driver in the units desired for
    their framework which is 0.1DegC. True resolution of 0.1DegC
    will result in the below table size to increase by 10 times */
+/* OPPO 2013-06-07 wangjc Modify begin for use new adcmap. */
+#ifdef CONFIG_VENDOR_EDIT
+static const struct qpnp_vadc_map_pt adcmap_btm_threshold[] = {
+    {-400,  1696},
+    {-350,  1666},
+    {-300,  1629},
+    {-250,  1586},
+    {-200,  1525},
+    {-150,  1478},
+    {-100,  1414},
+    {-50,   1344},
+    {0, 1269},
+    {50,    1191},
+    {100,   1112},
+    {150,   1033},
+    {200,   955},
+    {250,   880},
+    {300,   809},
+    {350,   743},
+    {400,   682},
+    {450,   627},
+    {500,   576},
+    {550,   532},
+    {600,   492},
+    {650,   457},
+    {700,   426},
+    {750,   399},
+    {800,   376},
+    {850,   355},
+    {900,   337},
+    {950,   321},
+    {1000,  307}
+};
+#else
 static const struct qpnp_vadc_map_pt adcmap_btm_threshold[] = {
 	{-300,	1642},
 	{-200,	1544},
@@ -129,6 +163,7 @@ static const struct qpnp_vadc_map_pt adcmap_btm_threshold[] = {
 	{780,	208},
 	{790,	203}
 };
+#endif
 
 static const struct qpnp_vadc_map_pt adcmap_qrd_btm_threshold[] = {
 	{-200,	1540},
@@ -622,10 +657,10 @@ int32_t qpnp_adc_scale_batt_therm(struct qpnp_vadc_chip *chip,
 			adc_properties, chan_properties);
 
 	return qpnp_adc_map_temp_voltage(
-			adcmap_btm_threshold,
-			ARRAY_SIZE(adcmap_btm_threshold),
-			bat_voltage,
-			&adc_chan_result->physical);
+		adcmap_btm_threshold,
+		ARRAY_SIZE(adcmap_btm_threshold),
+		bat_voltage,
+		&adc_chan_result->physical);
 }
 EXPORT_SYMBOL(qpnp_adc_scale_batt_therm);
 
@@ -959,6 +994,7 @@ int32_t qpnp_adc_btm_scaler(struct qpnp_vadc_chip *chip,
 		ARRAY_SIZE(adcmap_btm_threshold),
 		(param->high_temp),
 		&high_output);
+
 	if (rc) {
 		pr_debug("high temp mapping failed with %d\n", rc);
 		return rc;
@@ -1217,6 +1253,7 @@ int32_t qpnp_adc_get_devicetree_data(struct spmi_device *spmi,
 		pr_err("Invalid adc bit resolution property\n");
 		return -EINVAL;
 	}
+
 	adc_qpnp->adc_prop = adc_prop;
 
 	/* Get the peripheral address */
@@ -1225,7 +1262,6 @@ int32_t qpnp_adc_get_devicetree_data(struct spmi_device *spmi,
 		pr_err("No base address definition\n");
 		return -EINVAL;
 	}
-
 	adc_qpnp->slave = spmi->sid;
 	adc_qpnp->offset = res->start;
 
