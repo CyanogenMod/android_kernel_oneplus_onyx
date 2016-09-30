@@ -11,7 +11,11 @@
  */
 #ifndef __WCD9XXX_MBHC_H__
 #define __WCD9XXX_MBHC_H__
-
+#ifdef VENDOR_EDIT
+//liuyan add 2013-3-1, headset report
+#include<linux/switch.h>
+//liuyan add end
+#endif
 #include "wcd9xxx-resmgr.h"
 #include "wcdcal-hwdep.h"
 
@@ -236,6 +240,9 @@ struct wcd9xxx_mbhc_config {
 	unsigned int mclk_rate;
 	unsigned int gpio;
 	unsigned int gpio_irq;
+#ifdef VENDOR_EDIT
+	int headset_type;
+#endif
 	int gpio_level_insert;
 	bool insert_detect; /* codec has own MBHC_INSERT_DETECT */
 	bool detect_extn_cable;
@@ -368,6 +375,11 @@ struct wcd9xxx_mbhc {
 	u8   scaling_mux_in;
 	/* Holds codec specific interrupt mapping */
 	const struct wcd9xxx_mbhc_intr *intr_ids;
+#ifdef VENDOR_EDIT
+	//liuyan 2013-3-1,add for headset report
+	struct switch_dev wcd9xxx_sdev;
+	//liuyan add end
+#endif
 
 #ifdef CONFIG_DEBUG_FS
 	struct dentry *debugfs_poke;
