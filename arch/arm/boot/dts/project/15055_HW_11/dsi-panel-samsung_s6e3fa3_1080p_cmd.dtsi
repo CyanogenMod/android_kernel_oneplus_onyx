@@ -46,15 +46,15 @@
 		qcom,mdss-dsi-border-color = <0>;
 		qcom,mdss-dsi-on-command = [
 		05 01 00 00 00 00 02 29 00
-		05 01 00 00 14 00 02 11 00
+		05 01 00 00 10 00 02 11 00
 		15 01 00 00 00 00 02 35 00
 		15 01 00 00 00 00 02 53 20
 		15 01 00 00 00 00 02 55 01
 		29 01 00 00 00 00 03 FC 5A 5A
 		15 01 00 00 00 00 02 B0 1E
 		15 01 00 00 00 00 02 FD 9E
-		29 01 00 00 04 00 03 FC A5 A5];
-		qcom,mdss-dsi-off-command = [05 01 00 00 28 00 02 28 00
+		29 01 00 00 00 00 03 FC A5 A5];
+		qcom,mdss-dsi-off-command = [05 01 00 00 10 00 02 28 00
 					05 01 00 00 A0 00 02 10 00];
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
@@ -82,8 +82,8 @@
 		qcom,mdss-dsi-mdp-trigger = "trigger_sw";
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 		qcom,mdss-dsi-lp11-init;
-		qcom,mdss-dsi-init-delay-us = <10000>;
-		qcom,mdss-dsi-reset-sequence = <1 10>, <0 5>, <1 20>;
+		qcom,mdss-dsi-init-delay-us = <6000>;
+		qcom,mdss-dsi-reset-sequence = <1 5>, <0 1>, <1 10>;
 		/*qcom,mdss-dsi-panel-inverted;*/
 		qcom,mdss-pan-physical-width-dimension = <62>;
 		qcom,mdss-pan-physical-height-dimension = <111>;
