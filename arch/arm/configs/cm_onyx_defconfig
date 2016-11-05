@@ -1202,8 +1202,8 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
-CONFIG_NFC_DEVICES=y
-CONFIG_PN544_NFC=y
+# CONFIG_NFC_DEVICES is not set
+# CONFIG_PN544_NFC is not set
 
 #
 # Device Drivers
@@ -1345,7 +1345,7 @@ CONFIG_EEPROM_93CX6=y
 # Altera FPGA firmware download module
 #
 # CONFIG_ALTERA_STAPL is not set
-CONFIG_SN3193_SLED=y
+# CONFIG_SN3193_SLED is not set
 
 #
 # SCSI device support
