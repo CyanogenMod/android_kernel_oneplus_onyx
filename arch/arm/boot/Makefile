@@ -15,6 +15,7 @@ ifneq ($(MACHINE),)
 include $(srctree)/$(MACHINE)/Makefile.boot
 endif
 
+
 # Note: the following conditions must always be true:
 #   ZRELADDR == virt_to_phys(PAGE_OFFSET + TEXT_OFFSET)
 #   PARAMS_PHYS must be within 4MB of ZRELADDR
@@ -24,6 +25,7 @@ PARAMS_PHYS := $(params_phys-y)
 INITRD_PHYS := $(initrd_phys-y)
 
 export ZRELADDR INITRD_PHYS PARAMS_PHYS
+
 
 targets := Image zImage xipImage bootpImage uImage
 
@@ -72,7 +74,7 @@ endif
 targets += $(DTB_LIST)
 
 # Rule to build device tree blobs
-$(obj)/%.dtb: $(src)/dts/%.dts FORCE
+$(obj)/%.dtb: $(src)/dts/%.dts   FORCE
 	$(call if_changed_dep,dtc)
 
 $(obj)/dtbs: $(DTB_OBJS)
